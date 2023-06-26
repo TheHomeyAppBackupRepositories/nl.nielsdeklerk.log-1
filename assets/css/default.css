@@ -1,0 +1,209 @@
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+/* * {
+    box-sizing: border-box;
+} */
+body.index {
+    padding: 0 !important;
+}
+
+.main-view {
+    height: 100%;
+}
+body:not(.ng-scope)> .main-view {
+    display:none;
+}
+.oldLogView {    
+    display:none;
+}
+body:not(.ng-scope)> .oldLogView {
+    display:block;
+}
+.pagination {
+    text-align: center;
+    display: inline-block;
+}
+
+.pagination>li {
+    display: inline-block;
+}
+
+
+
+
+
+.logline {
+    height: auto;
+    line-height: initial;
+    white-space: nowrap;
+}
+
+input {
+    margin-top: 10px;
+    margin-right: 24px;
+}
+
+.checkbox-image {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    background-size: 20px !important;
+    width: 24px !important;
+    height: 24px !important;
+    background-repeat: no-repeat;
+    background-position: 2px;
+}
+
+.logfile {
+    -webkit-user-select: all;
+    user-select: all;
+}
+
+.logfile * {
+    -webkit-user-select: inherit;
+    user-select: inherit;
+}
+
+.rotated90>* {
+    transform: rotate(90deg);
+    position: absolute;
+    top: -100vw;
+    width: 100vh;
+    height: 100vw;
+    overflow: scroll;
+    transform-origin: bottom left;
+}
+
+.toggle-icon {
+    font-size: 16pt;
+    cursor: pointer;
+}
+
+.log-table td {
+    vertical-align: top;
+    padding: 5px;
+}
+
+.ui-grid-filter-select {
+    padding: 5px 2px !important;
+}
+
+.ui-grid-filter-input {
+    border: 1px solid grey !important;
+}
+
+.log-grid {
+    height: calc(100% - 8px) !important;
+}
+
+.date-time-filter-buttons {
+    width: 40%;
+    height: 2em;
+    padding: inherit;
+    text-align: center;
+}
+
+.modal {
+    opacity: 1 !important;
+}
+.modal-backdrop {
+    opacity: 0.2 !important;
+}
+.modal-dialog {
+    margin-top:50px;
+    text-align:center;
+
+}
+.uib-daypicker>table {
+    display:inline-block;
+}
+/* .uib-day>.btn  {
+    padding:5px 2px!important;
+}
+.uib-day .btn.active {
+    font-weight: bold!important;
+} */
+.ui-grid-pager-control-input  {
+    padding:4px 4px;
+}
+.ui-grid-menu-button {
+    padding-right:30px;
+}
+.ui-grid-menu-button .ui-grid-menu .ui-grid-menu-mid {
+    overflow: auto;
+}
+.ui-grid-icon-container .ui-grid-icon-menu {
+    font-size:20px;
+    /* margin-right:20px; */
+}
+.ui-grid-menu {
+    max-width:500px!important;
+}
+.ui-grid-menu-mid {
+    /* overflow:scroll!important; */
+    overflow-x: hidden !important;;
+    overflow-y:scroll!important;
+    /* max-height: 80vh !important; */
+}
+/* .rotated90 .ui-grid-menu-mid {
+    max-height: 70vw !important;
+} */
+.ui-grid-column-menu .ui-grid-menu-mid {
+    overflow-x: hidden !important;;
+    overflow-y:auto!important;
+}
+.ui-grid-menu-item {
+    width: auto!important;
+}
+.ui-grid-menu-items  {
+    display:inline-block;
+}
+.ui-grid-menu-item > .fa-solid {
+    font-size:20px;
+    width:22px;
+}
+/* .ui-grid-menu-items > li {
+    display:inline-block;  
+} */
+.cancel-custom-date-range-filter-button {
+    right: 16px !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Tutorial parts */
+
+.hints {
+    position: fixed;
+    top:30px;
+    left:0;
+    bottom:0;
+    right:0;
+    z-index:1;    
+}
+
+.hints .overlay {
+    position: absolute;
+    top:0px;
+    left:0;
+    bottom:0;
+    right:0;
+    background-color:white;
+    opacity: 0.85;
+    z-index:-1;
+}
+.fa-icon-big {
+    font-size:48px;
+}

@@ -1,58 +1,493 @@
 <!doctype html>
-<html>
-    <head>
-        <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
-        <script type="text/javascript" src="settings.js" data-origin="settings"></script>
-    </head>
-    <style>
-        i {
-            margin-right: 20px;
-        }
+<html lang="en" not-ng-app="simplelog">
+<title>Simple (Sys) LOG</title>
 
-        .logline {
-            height: auto;
-            line-height: initial;
-            white-space: nowrap;
-        }
-        input{
-            margin-top: 10px;
-            margin-right: 24px;
-        }
-        .checkbox-image {
-            mask-image: none!important;
-            background-size: 20px!important;
-            width: 24px !important;
-            height: 24px !important;
-            background-repeat: no-repeat;
-            background-position: 2px;
-        }
-        .logfile {
-            user-select: all;
-        }.logfile * {
-            user-select: inherit;
-        }
-    </style>
-    <body>
-        <div id="logView" class= "dblock" style="display: block;">
-            <div style="top: -1px;position: absolute;width: 300%;left: 0px;">
-                <div>
-                    <div style="display:block;">
-                        <input type="checkbox" id="show_date" style="background-image: url(./date.png);" onClick="show_log(true)" class="checkbox-image" checked ></input>
-                        <input type="checkbox" id="show_time" style="background-image: url(./time.png);" onClick="show_log(true)" class="checkbox-image" checked > </input>
-                        <input type="checkbox" id="show_refresh" style="background-image: url(./refresh.png);" onClick="show_log(true)" class="checkbox-image" checked >  </input>
-                        <input type="checkbox" id="show_td" style="background-image: url(./sort.png);" onClick="show_log(true)" class="checkbox-image" checked > </input>
-                        <input type="checkbox" id="show_ft" style="background-image: url(./font.png);" onClick="show_size(true)" class="checkbox-image" >  </input>
-                    </div>
-                    <div style="display:block;">
-                        <button id="showCsv" onclick="show_csv()"  style="margin-left: 40px;"> <img src="download.svg"height="24" width="24" style="float: right;"> CSV </button>
-                        <button id="clear_simpleLOG" onclick="clear_simpleLOG()" style="margin-left: 40px;"> <img src="trash.svg"height="24" width="24" style="float: right;"> Clear log</button>
-                    </div>
-                </div>
-                <div id="logtextarea" style="margin: 0px; width: 90%; height: 700px; font-family: monospace; font-size: xx-small; margin-top: 10px;">
-                    Log...
-                </div>
-                <!-- <button id="clear_simpleLOG" onclick="clear_simpleLOG()"><img src="trash.svg"height="24" width="24" style="float: right;"> Clear </button>-->
-                <!-- <button id="download_simpleLOG" onclick="download_simpleLOG()"> <img src="download.svg"height="24" width="24"> CSV </button>-->
-            </div>
-    </body>
+<head>
+	<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/jquery.min.js"></script>
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/jquery.ui.touch-punch.js"></script>
+	<link rel="stylesheet" href="../../net.i-dev.betterlogic/assets/css/jquery-ui.css" type="text/css" />
+
+
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/angular.min.js"></script>
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/angular-animate.min.js"></script>
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/angular-touch.min.js"></script>
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/angular-dynamic-locale.js"></script>
+
+
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/lodash.min.js"></script>
+
+	<link rel="stylesheet" href="../../net.i-dev.betterlogic/assets/css/fontawesome.min.css" type="text/css" />
+
+	<link rel="stylesheet" href="../../net.i-dev.betterlogic/assets/css/bootstrap.min.css" type="text/css" />
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/bootstrap.bundle.min.js"></script>
+
+
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/ui-bootstrap-tpls-2.5.0.min.js"></script>
+
+	<link rel="stylesheet" href="../../net.i-dev.betterlogic/assets/css/ui-grid.min.css" type="text/css" />
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/ui-grid.min.js"></script>
+
+
+	<script type="text/javascript" src="../../net.i-dev.betterlogic/assets/js/bll.module.js"></script>
+	<link rel="stylesheet" href="../../net.i-dev.betterlogic/assets/css/bll.css" type="text/css" />
+	
+	<script type="text/javascript" src="simplelog.module.js"></script>
+
+	<link rel="stylesheet" href="../assets/css/default.css" type="text/css" />
+
+	<script type="text/javascript">
+		
+		if (!window.hasOwnProperty('angular')) {
+
+			//if (typeof window.angular === 'undefined') {
+			//Homey.alert('The Better Logic Library App needs to be installed to run the settings.\nInstall the Better Logic Library App to continue to use this app.');
+			let Homey;
+			let _id = -1;
+			let show_refresh;
+			let show_date;
+			let show_time;
+			let show_td;
+			let show_ft;
+			var loaded = false;
+
+			window.onHomeyReady = function(HomeyReady)  {
+				Homey = HomeyReady;
+				console.log("Get Ready...");
+				Homey.ready();
+				loaddisplayParameters();
+				refreshLog();			
+			}
+
+			function clear_simpleLOG() {
+				Homey.confirm('Are you sure you wish to clear the complete log?', 'warning', function (err, val) {
+					if (err) return Homey.alert(err);
+					if (!val) return;
+
+					Homey.api("GET", "/clearlog/", function (err) {
+						show_log(true);
+					});
+					_id = -1;
+				});
+
+			}
+
+			function download_simpleLOG() {
+				Homey.get("BackLog", function (err, logging) {
+					let csv = "date;group;data\r\n";
+					for (i in logging) {
+						csv = csv + `${logging[i][2].timestamp};${cleanForCsv(logging[i][1])};${cleanForCsv(logging[i][0])}\r\n`;
+					}
+					download("Simple LOG.csv", csv);
+				});
+			}
+
+			function show_csv() {
+				Homey.get("BackLog", function (err, logging) {
+					download_simpleLOG(); //NEEDS TO BE IMPROVED!!! Up there!
+
+					let csv = `<div class="logline">CSV log file can't be downloaded within the app.</div>`;
+					csv = csv + `<div class="logline">Go to the Homey developer site at https://developer.athom.com/tools/app-settings</div>`;
+					csv = csv + `<div class="logline">Open the Simple log settings,</div>`;
+					csv = csv + `<div class="logline">then use the CSV button.</div>`;
+					csv = csv + `<div class="logline">Or copy the log in CSV format below:</div>`;
+					csv = csv + `<div class="logline"></div><br>`;
+					csv = csv + `<div class="logline"></div><br>`;
+					csv = csv + `<div class="logline"></div><br>`;
+					csv = csv + `<div class="logfile">`;
+					csv = csv + `<div class="logline">date;group;data</div>`;
+					let log = "";
+					for (i in logging) {
+						const logline = `<div class="logline">${logging[i][2].timestamp};${cleanForCsv(logging[i][1])};${cleanForCsv(logging[i][0])}</div>`;
+						if (show_td) {
+							log = logline + log;
+						} else {
+							log = log + logline;
+						}
+					}
+					csv = csv + log;
+					csv = csv + `</div>`;
+					document.getElementById("logtextarea").innerHTML = csv;
+				});
+			}
+
+			function cleanForCsv(value) {
+				if (typeof value === "string") {
+					value = value.replace(/;/g, ":");
+				}
+
+				return value;
+			}
+
+			function loaddisplayParameters() {
+				Homey.get("show_refresh", (e, x) => {
+					show_refresh = x.checked;
+					document.getElementById("show_refresh").checked = x.checked;
+				});
+				Homey.get("show_date", (e, x) => {
+					show_date = x.checked;
+					document.getElementById("show_date").checked = x.checked;
+				});
+				Homey.get("show_time", (e, x) => {
+					show_time = x.checked;
+					document.getElementById("show_time").checked = x.checked;
+				});
+				Homey.get("show_td", (e, x) => {
+					show_td = x.checked;
+					document.getElementById("show_td").checked = x.checked;
+				});
+				Homey.get("show_ft", (e, x) => {
+					show_ft = x.checked;
+					document.getElementById("show_ft").checked = x.checked;
+					show_size();
+				});
+			}
+
+			function savedisplayParameters() {
+				show_refresh = document.getElementById("show_refresh").checked;
+				console.log("SET show_refresh:");
+				console.log(show_refresh);
+				Homey.set("show_refresh", { checked: show_refresh });
+				show_date = document.getElementById("show_date").checked;
+				Homey.set("show_date", { checked: show_date });
+				show_time = document.getElementById("show_time").checked;
+				Homey.set("show_time", { checked: show_time });
+				show_td = document.getElementById("show_td").checked;
+				Homey.set("show_td", { checked: show_td });
+				show_ft = document.getElementById("show_ft").checked;
+				Homey.set("show_ft", { checked: show_ft });
+			}
+
+			function refreshLog() {
+				if (!loaded || document.getElementById("show_refresh").checked === true) {
+					show_log();
+				}
+				setTimeout(refreshLog, 1000);
+			}
+
+			function show_log(force) {
+				if (force) {
+					_id = -1;
+				}
+				//console.log("Show some logging...");
+				Homey.get("BackLog", (err, logging) => {
+					if (err) {
+						document.getElementById("show_refresh").checked = false;
+						return console.error("Could not get log", err);
+					}
+					// console.log('logging');
+					// console.log(logging);
+					let log = "";
+					if (force) savedisplayParameters();
+					if (logging) if (logging.length > _id) {
+						for (i in logging) {
+							if (logging[i][1]) {
+								logging[i][1] = `[${logging[i][1]}]`;
+							} else {
+								logging[i][1] = ``;
+							}
+							const logline = `<div class="logline"> ${formatDT(logging[i][2].timestamp, show_date, show_time)} ${logging[i][1]}  ${logging[i][0]} </div>`;
+
+							if (show_td) {
+								log = logline + log;
+							} else {
+								log = log + logline;
+							}
+						}
+						document.getElementById("logtextarea").innerHTML = log;
+						loaded = true;
+						_id = logging.length;
+					}
+				});
+			}
+
+			function show_size() {
+				let lt = document.getElementById("logtextarea");
+				savedisplayParameters();
+				if (show_ft) {
+					lt.style.fontSize = "large";
+				} else {
+					lt.style.fontSize = "xx-small";
+				}
+			}
+
+			function formatDT(dateIn, returnDate, returnTime) {
+				let date = new Date(dateIn);
+				let hour = date.getHours();
+				hour = (hour < 10 ? "0" : "") + hour;
+				var min = date.getMinutes();
+				min = (min < 10 ? "0" : "") + min;
+				var sec = date.getSeconds();
+				sec = (sec < 10 ? "0" : "") + sec;
+				var year = date.getFullYear();
+				var month = date.getMonth() + 1;
+				month = (month < 10 ? "0" : "") + month;
+				var day = date.getDate();
+				day = (day < 10 ? "0" : "") + day;
+
+				if (returnDate === true && returnTime === false) {
+					return year + "-" + month + "-" + day + "  ";
+				} else if (returnDate === false && returnTime === true) {
+					return hour + ":" + min + ":" + sec + "  ";
+				} else if (returnDate === true && returnTime === true) {
+					return year + "-" + month + "-" + day + "  " + hour + ":" + min + ":" + sec + "  ";
+				} else {
+					return "";
+				}
+			}
+
+			function _download(content, fileName, mimeType) {
+				var a = document.createElement('a');
+				mimeType = mimeType || 'application/octet-stream';
+
+				if (navigator.msSaveBlob) { // IE10
+					navigator.msSaveBlob(new Blob([content], {
+						type: mimeType
+					}), fileName);
+				} else if (URL && 'download' in a) { //html5 A[download]
+					a.href = URL.createObjectURL(new Blob([content], {
+						type: mimeType
+					}));
+					a.setAttribute('download', fileName);
+					document.body.appendChild(a);
+					a.click();
+					Homey.openURL(a.href);
+					console.log('homey openURL');
+					document.body.removeChild(a);
+				} else {
+					location.href = 'data:application/octet-stream,' + encodeURIComponent(content); // only this mime type is supported
+				}
+			}
+			function openBllAppLink() {
+				Homey.openURL('https://homey.app/a/net.i-dev.betterlogic/');
+			}
+
+			function download(filename, text) {
+				//return _download(text, filename, 'data:text/plain;charset=utf-8,');
+				//var encodedUri = encodeURI("data:application/octet-stream," + encodeURIComponent(text));
+				//var encodedUri = encodeURI("data:text/plain;charset=utf-8," + encodeURIComponent(text));
+				//Homey.openURL(encodedUri);
+
+				//var encodedUri = encodeURI("data:text/csv;charset=utf-8," + encodeURIComponent(text));
+				var encodedUri = encodeURI("data:text/csv;charset=utf-8," + text);//+ encodeURIComponent(text));
+				console.log(encodedUri);
+				Homey.openURL(encodedUri);
+			}
+
+		}
+		else {
+			window.onHomeyReady = function(Homey) {
+				window.angular.bootstrap(document, ['simplelog']);
+				
+			}
+		}
+
+
+	</script>
+</head>
+<style>
+
+</style>
+
+<body ng-controller="simplelogCtrl as simplelog" class="index h-100 overflow-hidden" ng-class="{rotated90:view.settings.rotated90}" ui-i18n="{{view.lang}}">
+	<div id="logView" class="oldLogView">
+		<div style="top: -1px;position: absolute;width: 300%;left: 0px;">
+			<strong style="width:90vw;display:block;padding:5px;box-sizing: border-box;" data-i18n="fullyEnableInstallBll">To fully enable the New Simple (Sys) LOG, all it's features and new interface, install the <a href="#" id="bllAppLink" onClick="openBllAppLink()">Better Logic Library
+					app.</a></strong>
+			<div>
+				<div style="display:block;">
+					<input type="checkbox" id="show_date" style="background-image: url(./date.png);" onClick="show_log(true)" class="checkbox-image" checked></input>
+					<input type="checkbox" id="show_time" style="background-image: url(./time.png);" onClick="show_log(true)" class="checkbox-image" checked> </input>
+					<input type="checkbox" id="show_refresh" style="background-image: url(./refresh.png);" onClick="show_log(true)" class="checkbox-image" checked> </input>
+					<input type="checkbox" id="show_td" style="background-image: url(./sort.png);" onClick="show_log(true)" class="checkbox-image" checked> </input>
+					<input type="checkbox" id="show_ft" style="background-image: url(./font.png);" onClick="show_size(true)" class="checkbox-image"> </input>
+				</div>
+				<div style="display:block;">
+					<button id="showCsv" onclick="show_csv()" style="margin-left: 40px;"> <img src="download.svg" height="24" width="24" style="float: right;"> CSV </button>
+					<button id="clear_simpleLOG" onclick="clear_simpleLOG()" style="margin-left: 40px;"> <img src="trash.svg" height="24" width="24" style="float: right;"> Clear log</button>
+				</div>
+			</div>
+			<div id="logtextarea" style="margin: 0px; width: 90%; height: 700px; font-family: monospace; font-size: xx-small; margin-top: 10px;">
+				Log...
+			</div>
+			<!-- <button id="clear_simpleLOG" onclick="clear_simpleLOG()"><img src="trash.svg"height="24" width="24" style="float: right;"> Clear </button>-->
+			<!-- <button id="download_simpleLOG" onclick="download_simpleLOG()"> <img src="download.svg"height="24" width="24"> CSV </button>-->
+		</div>
+	</div>
+
+	<div class="main-view overflow-hidden" ng-show="!view.id || view.id=='log'">
+		<div class="busyOverlay" ng-show="view.isBusy"></div>
+		<div class="hints fw-bold" ng-show="view.showHints">
+			<div class="overlay"></div>
+			<div class="position-absolute start-0 text-center text-primary" style="width:190px;">
+				<span class="fa-solid fa-icon-big fa-arrow-up"></span>
+				<span class="d-block" data-i18n="Drag_the_cloumns">Drag the columns to re-position them</span>
+			</div>
+			<div class="position-absolute end-0 h-100 w-100 text-success" style="margin-right: 32px;">
+				<span class="fa-solid fa-icon-big fa-arrow-up position-absolute end-0"></span>
+				<span class="d-block position-absolute w-50 top-25 start-50 text-center" data-i18n="Click_open_view">Click here to open the view settings</span>
+			</div>
+			<div class="position-absolute end-0 h-100 w-100 text-danger-emphasis">
+				<span class="fa-solid fa-icon-big fa-arrow-up position-absolute end-0"></span>
+				<span class="d-block position-absolute w-50 top-50 end-0 p-2 text-center" data-i18n="Click_rotate_screen">Click here to rotate the screen</span>
+			</div>
+			<div class="position-absolute start-0 bottom-0 m-2 ">
+				<div class="btn homey-button-primary-shadow btn-primary" data-i18n="Close" ng-click="closeHints()">Close</div>
+			</div>
+		</div>
+		<!-- <div class="position-fixed z-1" style="right:30px;top:5px;"><span class="fa-solid toggle-icon fa-file-csv" ng-click="downloadCSV();"></span></div> -->
+		<div class="position-fixed z-1" style="right:5px;top:5px;"><span class="fa-solid toggle-icon fa-rotate-right" ng-click="toggleSetting('rotated90');"></span></div>
+		<div class="d-flex flex-column overflow-hidden h-100">
+			<!-- <div class="container text-center">
+					<div class="row">
+						<div class="col"><span class="fa-solid toggle-icon fa-rotate-right" ng-click="toggleSetting('rotated90');"></span></div>
+					</div>
+				</div> -->
+			<!-- <div class="flex-grow-0"><uib-progressbar value="55"></uib-progressbar></div> -->
+			<div class="flex-grow-1 overflow-y-auto">
+				<div ui-grid="logGridOptions" class="log-grid" ui-grid-auto-resize ui-grid-resize-columns ui-grid-selection ui-grid-pagination ui-grid-move-columns ui-grid-save-state> </div>
+				<!-- >ui-grid-exporter -->
+
+				<!-- <table class="log-table">
+						<thead>
+							<tr>
+								<th>Timestamp</th>
+								<th>Severity</th>
+								<th>Facility</th>
+								<th>App</th>
+								<th>Message</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="log in vars.logs">
+								<td>{{log.timestamp}}</td>
+								<td>{{log.severity}}</td>
+								<td>{{log.facility}}</td>
+								<td>{{log.app}}</td>
+								<td>{{log.message}}</td>
+							</tr>
+						</tbody>
+					</table> -->
+			</div>
+			<!-- <div uib-pagination total-items="vars.logTotal" ng-model="vars.logCurrentPage" items-per-page="vars.logPerPage"></div> -->
+		</div>
+	</div>
+	<div class="main-view overflow-hidden pb-5" ng-show="view.id=='settings'">
+		<form name="settingsForm" class="container h-100 overflow-y-auto">
+			<div class="text-end">
+				<span class="fa-solid fa-icon fa-book p-2 fs-3" ng-click="view.id='log'"></span>
+				<span class="fa-solid toggle-icon fa-rotate-right" ng-click="toggleSetting('rotated90');"></span>
+			</div>
+			<div class="card">
+				<div class="card-header" bl-translate>General</div>
+				<div class="card-body">
+					<div class="col-12 form-label" bl-translate>Automaticly remove logs older than x number of days.</div>
+					<div class="col-12 form-label" bl-translate>Leave empty to not automaticly remove logs rows.</div>
+					<div class="col-12 form-group form-floating">
+						<input type="number" class="form-control hy-nostyle" name="removeLogOlderThanDays" placeholder="Number of days to keep the log" ng-model="view.settings.removeLogOlderThanDays" ng-model-options="{ debounce: 300 }" minlength="1" min="1" step="1" />
+						<label class="hy-nostyle" for="xlsxFilename" bl-translate>Number of days to keep the log</label>
+					</div>
+					<div class="col-12 form-group form-check form-switch mt-3">
+						<input class="form-check-input hy-nostyle" type="checkbox" role="switch" id="groupInTimeline" checked ng-model="view.settings.groupInTimeline" />
+						<label class="form-check-label" for="groupInTimeline">Show group in Timeline</label>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header" bl-translate>Exports</div>
+				<div class="card-body">
+					<div class="col-12 form-label" bl-translate>Set the filenames to use when exporting files</div>
+					<div class="col-12 form-group form-floating">
+						<input type="text" class="form-control hy-nostyle" name="xlsxFilename" placeholder="Excel filename (* BLL supported)" ng-model="view.settings.xlsxFilename" ng-model-options="{ debounce: 300 }" minlength="1" required="true" />
+						<label class="hy-nostyle" for="xlsxFilename" bl-translate>Excel filename (* BLL supported)</label>
+					</div>
+					<div class="col-12 form-group form-check form-switch">
+						<input class="form-check-input hy-nostyle" type="checkbox" role="switch" id="includeUtcInExcel" checked ng-model="view.settings.includeUtcInExcel" />
+						<label class="form-check-label" for="includeUtcInExcel">Include UTC in Excel</label>
+					</div>
+
+					<div class="col-12 form-group form-floating mb-2">
+						<input type="text" class="form-control hy-nostyle" name="csvFilename" placeholder="CSV filename (* BLL supported)" ng-model="view.settings.csvFilename" ng-model-options="{ debounce: 300 }" minlength="1" required="true" />
+						<label class="hy-nostyle" for="csvFilename" bl-translate>CSV filename (* BLL supported)</label>
+					</div>
+
+					<div class="col-12 form-group form-floating mb-2">
+						<input type="text" class="form-control hy-nostyle" name="jsonFilename" placeholder="JSON filename (* BLL supported)" ng-model="view.settings.jsonFilename" ng-model-options="{ debounce: 300 }" minlength="1" required="true" />
+						<label class="hy-nostyle" for="jsonFilename" bl-translate>JSON filename (* BLL supported)</label>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-header" bl-translate>Debug</div>
+				<div class="card-body">
+					<div class="col-12 form-label mt-2" bl-translate>Debug all logs (for diagnostic for developer only) - Heavy on memory</div>
+					<div class="col-12 form-group form-check form-switch">
+						<input class="form-check-input hy-nostyle" type="checkbox" role="switch" id="debugLogs" checked ng-model="view.settings.debugLogs" />
+						<label class="form-check-label" for="debugLogs">Debug</label>
+					</div>
+					<!-- 
+					<div class="col-12 form-label mt-2" bl-translate>Include a Logbook into the diagnostic (only on request of developer)</div>
+					<div class="col-12 form-group mt-2">
+						<select class="hy-nostyle" type="checkbox" role="switch" id="logBookDiagnostic" ng-model="view.logBookDiagnostic" ng-ignore-dirty>
+							<option></option>
+							<option ng-repeat="logBook in view.logBooks" value="{{logBook.id}}">{{logBook.id}}</option>
+						</select>
+						<button type="button" class="btn homey-button-primary-shadow-full btn-primary" ng-click="submitLogBookForDiagnostic(view.logBookDiagnostic)" ng-disabled="!view.logBookDiagnostic" bl-translate>Submit into diagnostic</button>
+					</div> -->
+				</div>
+			</div>
+		</form>
+		<div class="main-buttons position-fixed bottom-0 w-100">
+			<!-- <div class="homey-button-primary-shadow-full">Save</div> -->
+			<button type="button" class="btn homey-button-primary-shadow-full btn-primary" ng-click="settingsForm.$valid && settingsForm.$dirty ? saveSettings() : null;" ng-disabled="!settingsForm.$valid || !settingsForm.$dirty" bl-translate>Save</button>
+		</div>
+	</div>
+
+	<script type="text/ng-template" id="custom-date-filter.html">
+		<div class="modal-content col-md-12 col-md-offset-0 col-sm-12 col-sm-offset-0 col-xs-12 col-xs-offset-0">		
+			<div class="modal-header">
+				<p class="modal-title well custom-date-filter-header">
+				<span class="custom-date-filter-title-text">
+					{{ custom.title }} {{custom.filterDate | date:'dd MMMM yyyy'}}
+				</span>
+				</p>
+			</div>
+	
+			<div class="row modal-body custom-date-filter-container-row">			
+				<form name="custom.customDateFilterForm"
+					ng-submit="custom.setFilterDate(custom.filterDate)"
+					no-validation>
+	
+					<div class="row custom-filter-date-input-row">					
+						<div class="well col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 col-xs-10 col-xs-offset-1 custom-date-filter-input">						
+							<div uib-datepicker ng-model="custom.filterDate" 
+								min-date="custom.minDate" 
+								max-date="custom.maxDate"
+								ng-change="custom.filterDateChanged()"
+								class="well well-sm">
+							</div>		
+						</div>		
+					</div>
+		
+					<div class="row modal-footer custom-date-filter-submit-buttons-row">		
+						<div class="custom-date-filter-submit-buttons-div col-lg-8 col-lg-offset-2 col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1 col-xs-10 col-xs-offset-1">			
+							<!-- <button class="btn hy-nostyle btn-success btn-lg custom-date-filter-submit-button" -->
+								<button class="btn homey-button-primary-shadow btn-lg custom-date-filter-submit-button"
+									type="submit" data-i18n="Apply" bl-translate>Apply</button>
+			
+							<button type="button"
+									class="btn homey-button-secondary-shadow btn-lg custom-date-filter-cancel-button"
+									ng-click="custom.cancelDateFilter()" data-i18n="Cancel" bl-translate>Cancel</button>  
+						</div>  
+					</div>  
+				</form>	
+			</div>	
+		</div>	  
+	</script>
+
+
+</body>
+
 </html>
